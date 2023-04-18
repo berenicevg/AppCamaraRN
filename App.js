@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Button,
   StyleSheet,
@@ -13,9 +13,9 @@ export default function App() {
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [hasPermission, setHasPermission] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
-  const cameraRef = React.useRef(null);
+  const cameraRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
@@ -23,7 +23,7 @@ export default function App() {
   }, []);
 
   const takePicture = async () => {
-    if (cameraRef) {
+    if (cameraRef.current) {
       const data = await cameraRef.current.takePictureAsync();
       setCapturedImage(data.uri);
     }
