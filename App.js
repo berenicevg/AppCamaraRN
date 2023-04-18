@@ -1,93 +1,71 @@
-import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import {
+  Button,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Image,
+} from "react-native";
 import { Camera } from "expo-camera";
-import { Image } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
-import * as MediaLibrary from "expo-media-library";
 
 export default function App() {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [cameraRef, setCameraRef] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
+  const [hasPermission, setHasPermission] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
+  const cameraRef = React.useRef(null);
 
-
-  useEffect(() => {
+  React.useEffect(() => {
     (async () => {
-      const { status } = await Camera.getCameraPermissionsAsync();
+      const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
     })();
   }, []);
 
   const takePicture = async () => {
     if (cameraRef) {
-      const data = await cameraRef.takePictureAsync(null);
+      const data = await cameraRef.current.takePictureAsync();
       setCapturedImage(data.uri);
     }
   };
 
-  const savePicture = async () => {
-    await MediaLibrary.requestPermissionsAsync();
-    await MediaLibrary.saveToLibraryAsync(capturedImage);
-    alert("La foto ha sido guardada en la galería de tu dispositivo");
+  const switchCamera = () => {
+    setType(
+      type === Camera.Constants.Type.back
+        ? Camera.Constants.Type.front
+        : Camera.Constants.Type.back
+    );
   };
 
   if (hasPermission === null) {
     return <View />;
   }
   if (hasPermission === false) {
-    return <Text>Sin acceso a la camera</Text>;
+    return <Text>Sin acceso a la camara </Text>;
   }
+
   return (
     <View style={styles.container}>
-      {capturedImage ? (
-        <View style={styles.preview}>
-          <Text style={styles.camText}>¡Esta es la foto que tomaste!</Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setCapturedImage(null)}
-          >
-            <FontAwesome name="close" size={23} color="white" />
+      <Camera style={styles.camara} type={type} ref={cameraRef}>
+        <View style={styles.botonContenedor}>
+          <TouchableOpacity style={styles.boton} onPress={switchCamera}>
+            <Text style={styles.texto}> Voltear camara </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={savePicture}>
-            <FontAwesome name="save" size={23} color="white" />
+          <TouchableOpacity style={styles.boton} onPress={takePicture}>
+            <Text style={styles.texto}> Tomar Foto </Text>
           </TouchableOpacity>
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: capturedImage }}
-              style={styles.capturedImage}
-            />
-          </View>
         </View>
-      ) : (
-        <View style={styles.cameraContainer}>
-          <Camera
-            ref={(ref) => setCameraRef(ref)}
-            style={styles.camera}
-            type={type}
-            ratio={"4:3"}
-          >
-            <View style={styles.cameraButtonContainer}>
-              <TouchableOpacity
-                style={styles.cameraButton}
-                onPress={() =>
-                  setType(
-                    type === Camera.Constants.Type.back
-                      ? Camera.Constants.Type.front
-                      : Camera.Constants.Type.back
-                  )
-                }
-              >
-                <FontAwesome name="camera" size={23} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cameraButton}
-                onPress={takePicture}
-              >
-                <FontAwesome name="circle" size={23} color="white" />
-              </TouchableOpacity>
-            </View>
-          </Camera>
+      </Camera>
+      {capturedImage && (
+        <View style={styles.vistaPreviaContenedor}>
+          <Image
+            source={{ uri: capturedImage }}
+            style={styles.vistaPreviaImagen}
+          />
+          <Button
+            title="Volver a tomar"
+            onPress={() => setCapturedImage(null)}
+          />
         </View>
       )}
     </View>
@@ -97,55 +75,44 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  cameraContainer: {
-    flex: 1,
-    flexDirection: "row",
-  },
-  camera: {
-    flex: 1,
-  },
-  cameraButtonContainer: {
-    flex: 1,
     backgroundColor: "transparent",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    margin: 20,
-  },
-  cameraButton: {
-    alignSelf: "flex-end",
     alignItems: "center",
-  },
-  preview: {
-    flex: 1,
     justifyContent: "center",
-    alignItems: "center",
   },
-  imageContainer: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    width: "80%",
-    height: "60%",
-    marginBottom: 40,
-    overflow: "hidden",
-  },
-  capturedImage: {
+  camara: {
     flex: 1,
     width: "100%",
   },
-  closeButton: {
-    position: "absolute",
-    top: 40,
-    left: 20,
-    right: 20,
+  botonContenedor: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 5,
+    alignItems: "flex-end",
+    flex: 1,
   },
-  saveButton: {
-    position: "absolute",
-    top: 40,
-    left: 20,
+  boton: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    height: 70,
+    justifyContent: "center",
+    width: 100,
   },
-  camText: {
-    fontSize: 20,
-    marginBottom: 20,
+  texto: {
+    color: "#000",
+    fontSize: 16,
+  },
+  vistaPreviaContenedor: {
+    backgroundColor: "white",
+    width: "100%",
+    height: 200,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  vistaPreviaImagen: {
+    width: "30%",
+    height: "80%",
+    resizeMode: "contain",
   },
 });
